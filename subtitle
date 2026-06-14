@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SubFloat AI - Netflix 雙語字幕懸浮工具</title>
+    <!-- Tailwind CSS for modern premium UI -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', 'Noto Sans TC', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-100 min-h-screen flex flex-col justify-between">
+
+    <!-- Header -->
+    <header class="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-md mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-2">
+                <span class="w-3 h-3 bg-red-600 rounded-full animate-pulse"></span>
+                <h1 class="text-lg font-bold tracking-wider text-white">SUBFLOAT AI</h1>
+            </div>
+            <span class="text-xs bg-zinc-800 text-zinc-400 px-2.5 py-1 rounded-full border border-zinc-700">v2.1 行動極客版</span>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-md w-full mx-auto px-4 py-6 space-y-6">
+        
+        <!-- Hero Introduction -->
+        <div class="bg-gradient-to-br from-zinc-900 to-zinc-950 p-5 rounded-2xl border border-zinc-800 space-y-2 shadow-xl">
+            <h2 class="text-base font-semibold text-red-500">🏆 100% 繞過 DRM 安全限制</h2>
+            <p class="text-xs text-zinc-400 leading-relaxed">
+                本工具利用 Android 系統的 <b>Picture-in-Picture (PiP)</b> 畫中畫技術，生成一個可自由拖曳、重疊在 Netflix App 最上方的雙語字幕浮動條。完全不需 Root、不需安裝 APK、絕不卡死黑畫面！
+            </p>
+        </div>
+
+        <!-- Step 1: Subtitle Input -->
+        <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800/80 space-y-4 shadow-md">
+            <div class="flex justify-between items-center">
+                <h3 class="text-sm font-bold text-zinc-300 flex items-center">
+                    <span class="bg-red-900/50 text-red-400 text-xs w-5 h-5 rounded-full flex items-center justify-center mr-2 font-mono">1</span>
+                    匯入字幕資料源
+                </h3>
+                <button onclick="loadDemoSubtitles()" class="text-xs text-red-400 hover:text-red-300 font-medium transition">
+                    載入測試示範字幕
+                </button>
+            </div>
+
+            <!-- Single or Split File Choice -->
+            <div class="grid grid-cols-2 gap-2 p-1 bg-zinc-950 rounded-lg border border-zinc-800/50">
+                <button onclick="switchTab('single')" id="tab-single" class="text-xs py-2 rounded-md font-medium text-center transition bg-zinc-800 text-white">
+                    中英混合/單一檔案
+                </button>
+                <button onclick="switchTab('dual')" id="tab-dual" class="text-xs py-2 rounded-md font-medium text-center transition text-zinc-400 hover:text-zinc-200">
+                    獨立雙檔案合併
+                </button>
+            </div>
+
+            <!-- Single Input Form -->
+            <div id="panel-single" class="space-y-3">
+                <div class="space-y-1">
+                    <label class="block text-xs text-zinc-500">上傳 SRT/VTT 檔案</label>
+                    <input type="file" id="file-single" accept=".srt,.vtt" onchange="handleSingleFile(event)" class="w-full text-xs bg-zinc-950 p-2.5 rounded-lg border border-zinc-800 text-zinc-300 file:mr-2 file:bg-zinc-800 file:border-0 file:text-xs file:px-2.5 file:py-1 file:rounded file:text-zinc-200 file:cursor-pointer">
+                </div>
+                <div class="relative">
+                    <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                        <div class="w-full border-t border-zinc-800/60"></div>
+                    </div>
+                    <div class="relative flex justify-center text-xs">
+                        <span class="bg-zinc-900 px-2 text-zinc-600">或直接貼上字幕文字</span>
+                    </div>
+                </div>
+                <textarea id="text-single" placeholder="請在此貼上帶有時間軸的 SRT/VTT 字幕內容..." class="w-full h-24 bg-zinc-950 border border-zinc-800 rounded-xl p-3 text-xs font-mono text-zinc-400 focus:outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition"></textarea>
+            </div>
+
+            <!-- Dual Input Form -->
+            <div id="panel-dual" class="space-y-3 hidden">
+                <div class="space-y-3">
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-1">1. 上傳英文 (目標語言) SRT/VTT</label>
+                        <input type="file" id="file-en" accept=".srt,.vtt" onchange="handleDualFile(event, 'en')" class="w-full text-xs bg-zinc-950 p-2.5 rounded-lg border border-zinc-800 text-zinc-300 file:mr-2 file:bg-zinc-800 file:border-0 file:text-xs file:px-2.5 file:py-1 file:rounded file:text-zinc-200">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-zinc-400 mb-1">2. 上傳中文 (母語翻譯) SRT/VTT</label>
+                        <input type="file" id="file-zh" accept=".srt,.vtt" onchange="handleDualFile(event, 'zh')" class="w-full text-xs bg-zinc-950 p-2.5 rounded-lg border border-zinc-800 text-zinc-300 file:mr-2 file:bg-zinc-800 file:border-0 file:text-xs file:px-2.5 file:py-1 file:rounded file:text-zinc-200">
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="parseSubtitles()" class="w-full bg-red-600/90 hover:bg-red-600 text-white font-semibold text-xs py-2.5 rounded-xl transition shadow-lg shadow-red-900/10 active:scale-[0.98]">
+                分析並載入字幕
+            </button>
+        </div>
+
+        <!-- Step 2: Styling and Customization -->
+        <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800/80 space-y-4 shadow-md">
+            <h3 class="text-sm font-bold text-zinc-300 flex items-center">
+                <span class="bg-red-900/50 text-red-400 text-xs w-5 h-5 rounded-full flex items-center justify-center mr-2 font-mono">2</span>
+                懸浮視窗樣式調校
+            </h3>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-xs text-zinc-500 block">英文 (主字幕) 顏色</label>
+                    <select id="color-en" onchange="updateCanvas()" class="w-full text-xs bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-zinc-300">
+                        <option value="#ffeb3b">璀璨黃 (最推薦)</option>
+                        <option value="#ffffff" selected>純潔白</option>
+                        <option value="#00e676">螢光綠</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-zinc-500 block">中文 (翻譯) 顏色</label>
+                    <select id="color-zh" onchange="updateCanvas()" class="w-full text-xs bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-zinc-300">
+                        <option value="#ffffff">純潔白</option>
+                        <option value="#b0bec5" selected>質感灰</option>
+                        <option value="#ffeb3b">璀璨黃</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-zinc-500 block">主字體大小 (EN)</label>
+                    <select id="size-en" onchange="updateCanvas()" class="w-full text-xs bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-zinc-300">
+                        <option value="20">16px (精緻)</option>
+                        <option value="24" selected>20px (適中)</option>
+                        <option value="28">24px (大字)</option>
+                    </select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-xs text-zinc-500 block">背景底色透明度</label>
+                    <select id="bg-opacity" onchange="updateCanvas()" class="w-full text-xs bg-zinc-950 border border-zinc-800 rounded-lg p-2 text-zinc-300">
+                        <option value="0.90">90% (極致遮光)</option>
+                        <option value="0.75" selected>75% (推薦偏暗)</option>
+                        <option value="0.50">50% (半透明)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Overlay Launch & Sync Control Panel -->
+        <div class="bg-zinc-900 p-5 rounded-2xl border border-zinc-800/80 space-y-4 shadow-md relative overflow-hidden">
+            <h3 class="text-sm font-bold text-zinc-300 flex items-center">
+                <span class="bg-red-900/50 text-red-400 text-xs w-5 h-5 rounded-full flex items-center justify-center mr-2 font-mono">3</span>
+                同步控制與懸浮啟動
+            </h3>
+
+            <!-- Trigger Button -->
+            <button id="btn-pip" onclick="togglePiP()" class="w-full bg-gradient-to-r from-red-600 to-amber-600 text-white font-bold text-sm py-4 rounded-xl shadow-lg shadow-red-900/20 flex flex-col items-center justify-center space-y-1 active:scale-[0.98] transition">
+                <span class="text-base flex items-center">
+                    <svg class="w-5 h-5 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path></svg>
+                    啟動懸浮雙字幕小視窗
+                </span>
+                <span class="text-[10px] text-white/80 font-normal">點擊後，請將懸浮窗拖曳至 Netflix 最上方疊加</span>
+            </button>
+
+            <!-- Sync & Time Fine-Tuning Panel -->
+            <div class="bg-zinc-950 p-4 rounded-xl border border-zinc-800 space-y-4">
+                <div class="flex justify-between items-center text-xs">
+                    <span class="text-zinc-500">目前字幕進度</span>
+                    <span id="current-time-display" class="font-mono text-zinc-300">00:00.000 / 00:00.000</span>
+                </div>
+
+                <!-- Subtitle Preview Area -->
+                <div class="bg-zinc-900/80 p-3 rounded-lg border border-zinc-800 text-center min-h-[60px] flex flex-col justify-center space-y-1">
+                    <div id="preview-en" class="text-xs text-zinc-400 font-semibold italic">Waiting for subtitles...</div>
+                    <div id="preview-zh" class="text-xs text-zinc-500">等待載入字幕檔...</div>
+                </div>
+
+                <!-- Main Controller Buttons -->
+                <div class="flex items-center justify-between">
+                    <div class="flex space-x-1">
+                        <button onclick="adjustOffset(-500)" class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs px-2.5 py-1.5 rounded-lg transition active:scale-95">
+                            慢 0.5s
+                        </button>
+                        <button onclick="adjustOffset(-100)" class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs px-2.5 py-1.5 rounded-lg transition active:scale-95">
+                            慢 0.1s
+                        </button>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button onclick="skipTime(-5)" class="bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-full transition active:scale-90">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0019 16V8a1 1 0 00-1.6-.8l-5.334 4zM4.066 11.2a1 1 0 000 1.6l5.334 4A1 1 0 0011 16V8a1 1 0 00-1.6-.8l-5.334 4z"></path></svg>
+                        </button>
+                        <button id="btn-play" onclick="togglePlay()" class="bg-red-600 text-white p-3.5 rounded-full shadow-md transition active:scale-90">
+                            <svg id="svg-play" class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                        </button>
+                        <button onclick="skipTime(5)" class="bg-zinc-800 hover:bg-zinc-700 text-white p-2 rounded-full transition active:scale-90">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.934 12.8a1 1 0 000-1.6l-5.334-4A1 1 0 005 8v8a1 1 0 001.6.8l5.334-4zM19.934 12.8a1 1 0 000-1.6l-5.334-4A1 1 0 0013 8v8a1 1 0 001.6.8l5.334-4z"></path></svg>
+                        </button>
+                    </div>
+                    <div class="flex space-x-1">
+                        <button onclick="adjustOffset(100)" class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs px-2.5 py-1.5 rounded-lg transition active:scale-95">
+                            快 0.1s
+                        </button>
+                        <button onclick="adjustOffset(500)" class="bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-zinc-300 text-xs px-2.5 py-1.5 rounded-lg transition active:scale-95">
+                            快 0.5s
+                        </button>
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center text-xs border-t border-zinc-800/50 pt-3">
+                    <span class="text-zinc-500">目前同步微調量：</span>
+                    <span id="offset-display" class="font-mono text-amber-500">0.00 秒</span>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Notes -->
+    <footer class="border-t border-zinc-900 bg-zinc-950 py-4 px-4 text-center">
+        <p class="text-[10px] text-zinc-500 leading-relaxed">
+            小訣竅：當你進入 Netflix 畫面時，可以拉下系統狀態列使用系統媒體播放控制面板（Media Control）來暫停/播放、或調整字幕時間軸。
+        </p>
+    </footer>
+
+    <!-- Video & Canvas Engines (Hidden from layout) -->
+    <div style="position: fixed; width: 1px; height: 1px; opacity: 0.01; pointer-events: none; overflow: hidden; bottom: 0; left: 0;">
+        <canvas id="subtitleCanvas" width="800" height="180"></canvas>
+        <video id="virtualVideo" muted playsinline></video>
+    </div>
+
+    <!-- Core Interactive Logic -->
+    <script>
+        let currentTab = 'single';
+        let subtitles = []; // Dynamic merged subtitles: [{ start, end, en, zh }]
+        let rawEn = [];
+        let rawZh = [];
+        let timeOffset = 0; // ms offset
+        let isPlaying = false;
+        let animationFrameId = null;
+        let lastUpdateTime = 0;
+        let playbackTime = 0; // Simulated playback time
+
+        const canvas = document.getElementById('subtitleCanvas');
+        const ctx = canvas.getContext('2d');
+        const video = document.getElementById('virtualVideo');
+        const playBtn = document.getElementById('btn-play');
+        const playSvg = document.getElementById('svg-play');
+
+        // Setup Virtual Video Stream
+        const stream = canvas.captureStream(10); // 10 FPS is enough for subtitles, saving battery!
+        video.srcObject = stream;
+
+        function switchTab(tab) {
+            currentTab = tab;
+            document.getElementById('panel-single').style.display = tab === 'single' ? 'block' : 'none';
+            document.getElementById('panel-dual').style.display = tab === 'dual' ? 'block' : 'none';
+            
+            const btnSingle = document.getElementById('tab-single');
+            const btnDual = document.getElementById('tab-dual');
+
+            if(tab === 'single') {
+                btnSingle.className = 'text-xs py-2 rounded-md font-medium text-center transition bg-zinc-800 text-white';
+                btnDual.className = 'text-xs py-2 rounded-md font-medium text-center transition text-zinc-400 hover:text-zinc-200';
+            } else {
+                btnDual.className = 'text-xs py-2 rounded-md font-medium text-center transition bg-zinc-800 text-white';
+                btnSingle.className = 'text-xs py-2 rounded-md font-medium text-center transition text-zinc-400 hover:text-zinc-200';
+            }
+        }
+
+        // Demo Subtitle Loader for Instant Testing
+        function loadDemoSubtitles() {
+            const demoText = `1
+00:00:01,000 --> 00:00:04,500
+[Brooklyn Nine-Nine]
+看過 Netflix 的《荒唐分局》了嗎？
+
+2
+00:00:04,600 --> 00:00:08,200
+This is Brooklyn Nine-Nine. Best sitcom ever!
+這是《荒唐分局》，有史以來最棒的情境喜劇！
+
+3
+00:00:08,500 --> 00:00:12,000
+Now you can learn English directly on your phone.
+現在你可以在手機上直接高效學英文了。
+
+4
+00:00:12,200 --> 00:00:17,000
+No more DRM issues. Let's practice now!
+徹底擺脫 DRM 數位保護干擾，讓我們開始練習吧！`;
+
+            document.getElementById('text-single').value = demoText;
+            switchTab('single');
+            parseSubtitles();
+        }
+
+        // Helper: Convert time string (00:01:20,123) to seconds
+        function parseTime(timeStr) {
+            timeStr = timeStr.trim().replace(',', '.');
+            const parts = timeStr.split(':');
+            let secs = 0;
+            if (parts.length === 3) {
+                secs += parseFloat(parts[0]) * 3600;
+                secs += parseFloat(parts[1]) * 60;
+                secs += parseFloat(parts[2]);
+            } else if (parts.length === 2) {
+                secs += parseFloat(parts[0]) * 60;
+                secs += parseFloat(parts[1]);
+            }
+            return secs;
+        }
+
+        // Standard SRT / VTT Parser
+        function parseSRTorVTT(text) {
+            const lines = text.split('\n');
+            const parsedCues = [];
+            let currentCue = null;
+
+            const timeRegex = /(\d{1,2}:\d{2}:\d{2}[,.]\d{3}|\d{2}:\d{2}[,.]\d{3})\s*-->\s*(\d{1,2}:\d{2}:\d{2}[,.]\d{3}|\d{2}:\d{2}[,.]\d{3})/;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                if (!line) continue;
+
+                const match = line.match(timeRegex);
+                if (match) {
+                    if (currentCue) {
+                        parsedCues.push(currentCue);
+                    }
+                    currentCue = {
+                        start: parseTime(match[1]),
+                        end: parseTime(match[2]),
+                        textLines: []
+                    };
+                } else if (currentCue && isNaN(line)) {
+                    currentCue.textLines.push(line);
+                }
+            }
+            if (currentCue) parsedCues.push(currentCue);
+
+            return parsedCues.map(cue => ({
+                start: cue.start,
+                end: cue.end,
+                text: cue.textLines.join('\n')
+            }));
+        }
+
+        // File Uploader Handlers
+        function handleSingleFile(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                document.getElementById('text-single').value = evt.target.result;
+            };
+            reader.readAsText(file);
+        }
+
+        function handleDualFile(e, type) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                if (type === 'en') {
+                    rawEn = parseSRTorVTT(evt.target.result);
+                } else {
+                    rawZh = parseSRTorVTT(evt.target.result);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Merging and parsing logic
+        function parseSubtitles() {
+            if (currentTab === 'single') {
+                const text = document.getElementById('text-single').value;
+                if (!text.trim()) {
+                    alert('請貼上或匯入字幕內容！');
+                    return;
+                }
+                const raw = parseSRTorVTT(text);
+                // For single mixed files, we try to split lines into English and Chinese
+                subtitles = raw.map(cue => {
+                    const lines = cue.text.split('\n');
+                    let en = lines[0] || '';
+                    let zh = lines[1] || '';
+                    if (lines.length > 2) {
+                        en = lines.slice(0, Math.ceil(lines.length/2)).join(' ');
+                        zh = lines.slice(Math.ceil(lines.length/2)).join(' ');
+                    }
+                    return { start: cue.start, end: cue.end, en, zh };
+                });
+            } else {
+                if (rawEn.length === 0 || rawZh.length === 0) {
+                    alert('請同時上傳英文和中文字幕檔！');
+                    return;
+                }
+                // Dual alignment merge algorithm (Engineered overlap detection)
+                subtitles = [];
+                rawEn.forEach(enCue => {
+                    // Find matching Chinese cue by highest overlapping time
+                    let bestMatch = null;
+                    let maxOverlap = 0;
+                    rawZh.forEach(zhCue => {
+                        const overlap = Math.max(0, Math.min(enCue.end, zhCue.end) - Math.max(enCue.start, zhCue.start));
+                        if (overlap > maxOverlap) {
+                            maxOverlap = overlap;
+                            bestMatch = zhCue;
+                        }
+                    });
+
+                    subtitles.push({
+                        start: enCue.start,
+                        end: enCue.end,
+                        en: enCue.text.replace(/\n/g, ' '),
+                        zh: bestMatch ? bestMatch.text.replace(/\n/g, ' ') : ''
+                    });
+                });
+            }
+
+            if (subtitles.length > 0) {
+                playbackTime = subtitles[0].start;
+                updateCanvas();
+                alert(`成功載入並優化 ${subtitles.length} 組中英雙語字幕！`);
+            } else {
+                alert('解析失敗，請確認字幕格式（SRT/VTT）是否正確。');
+            }
+        }
+
+        // Subtitle Finder and Text Wrapper
+        function getActiveCue(time) {
+            const adjustedTime = time + (timeOffset / 1000);
+            return subtitles.find(cue => adjustedTime >= cue.start && adjustedTime <= cue.end);
+        }
+
+        function wrapText(ctx, text, maxWidth) {
+            const words = text.split(' ');
+            let line = '';
+            const lines = [];
+            for (let n = 0; n < words.length; n++) {
+                let testLine = line + words[n] + ' ';
+                let metrics = ctx.measureText(testLine);
+                if (metrics.width > maxWidth && n > 0) {
+                    lines.push(line.trim());
+                    line = words[n] + ' ';
+                } else {
+                    line = testLine;
+                }
+            }
+            lines.push(line.trim());
+            return lines;
+        }
+
+        function wrapChineseText(ctx, text, maxWidth) {
+            let line = '';
+            const lines = [];
+            for (let n = 0; n < text.length; n++) {
+                let testLine = line + text[n];
+                let metrics = ctx.measureText(testLine);
+                if (metrics.width > maxWidth && n > 0) {
+                    lines.push(line);
+                    line = text[n];
+                } else {
+                    line = testLine;
+                }
+            }
+            lines.push(line);
+            return lines;
+        }
+
+        // Canvas Rendering Frame Loop
+        function updateCanvas() {
+            // Background Clearing with user opacity
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const opacity = document.getElementById('bg-opacity').value;
+            ctx.fillStyle = `rgba(10, 10, 10, ${opacity})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const activeCue = getActiveCue(playbackTime);
+
+            if (activeCue) {
+                // Update UI Previews
+                document.getElementById('preview-en').textContent = activeCue.en;
+                document.getElementById('preview-en').className = "text-xs text-amber-400 font-semibold italic";
+                document.getElementById('preview-zh').textContent = activeCue.zh;
+
+                // Render English on Canvas
+                const enSize = parseInt(document.getElementById('size-en').value);
+                ctx.font = `bold ${enSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                ctx.fillStyle = document.getElementById('color-en').value;
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                ctx.shadowBlur = 4;
+
+                const enLines = wrapText(ctx, activeCue.en, canvas.width - 60);
+                
+                // Render Chinese on Canvas
+                ctx.font = `${enSize - 4}px "Noto Sans TC", "Microsoft JhengHei", sans-serif`;
+                ctx.fillStyle = document.getElementById('color-zh').value;
+                const zhLines = wrapChineseText(ctx, activeCue.zh, canvas.width - 60);
+
+                // Precise layout positioning
+                let startY = 40;
+                enLines.forEach((line) => {
+                    ctx.fillText(line, canvas.width / 2, startY);
+                    startY += enSize + 6;
+                });
+
+                startY += 8;
+                zhLines.forEach((line) => {
+                    ctx.fillText(line, canvas.width / 2, startY);
+                    startY += enSize;
+                });
+            } else {
+                document.getElementById('preview-en').textContent = "... (無英文字幕) ...";
+                document.getElementById('preview-en').className = "text-xs text-zinc-600 italic";
+                document.getElementById('preview-zh').textContent = "... (無中文字幕) ...";
+            }
+
+            // Time progress updater
+            const minutes = Math.floor(playbackTime / 60).toString().padStart(2, '0');
+            const seconds = Math.floor(playbackTime % 60).toString().padStart(2, '0');
+            const ms = Math.floor((playbackTime % 1) * 1000).toString().padStart(3, '0');
+            
+            const maxDuration = subtitles.length > 0 ? subtitles[subtitles.length - 1].end : 0;
+            const maxMin = Math.floor(maxDuration / 60).toString().padStart(2, '0');
+            const maxSec = Math.floor(maxDuration % 60).toString().padStart(2, '0');
+
+            document.getElementById('current-time-display').textContent = `${minutes}:${seconds}.${ms} / ${maxMin}:${maxSec}.000`;
+        }
+
+        // Simulated Playback Clock Runner
+        function tick(timestamp) {
+            if (!isPlaying) return;
+            if (!lastUpdateTime) lastUpdateTime = timestamp;
+            const elapsed = (timestamp - lastUpdateTime) / 1000;
+            lastUpdateTime = timestamp;
+
+            playbackTime += elapsed;
+            
+            // Limit simulated video length
+            const maxDuration = subtitles.length > 0 ? subtitles[subtitles.length - 1].end : 0;
+            if (playbackTime > maxDuration && maxDuration > 0) {
+                playbackTime = 0;
+                pauseSubtitles();
+            }
+
+            updateCanvas();
+            animationFrameId = requestAnimationFrame(tick);
+        }
+
+        function togglePlay() {
+            if (isPlaying) {
+                pauseSubtitles();
+            } else {
+                playSubtitles();
+            }
+        }
+
+        function playSubtitles() {
+            if (subtitles.length === 0) {
+                alert('請先匯入字幕檔才能播放！');
+                return;
+            }
+            isPlaying = true;
+            lastUpdateTime = 0;
+            video.play();
+            animationFrameId = requestAnimationFrame(tick);
+            
+            playBtn.className = "bg-zinc-800 text-white p-3.5 rounded-full shadow-md transition active:scale-90";
+            playSvg.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"></path>';
+
+            // Setup Media Session Metadata for lockscreen synced controls
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'playing';
+            }
+        }
+
+        function pauseSubtitles() {
+            isPlaying = false;
+            video.pause();
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            playBtn.className = "bg-red-600 text-white p-3.5 rounded-full shadow-md transition active:scale-90";
+            playSvg.innerHTML = '<path d="M8 5v14l11-7z"></path>';
+
+            if ('mediaSession' in navigator) {
+                navigator.mediaSession.playbackState = 'paused';
+            }
+        }
+
+        // Action controls
+        function skipTime(seconds) {
+            playbackTime = Math.max(0, playbackTime + seconds);
+            updateCanvas();
+        }
+
+        function adjustOffset(ms) {
+            timeOffset += ms;
+            document.getElementById('offset-display').textContent = `${(timeOffset / 1000).toFixed(2)} 秒`;
+            updateCanvas();
+        }
+
+        // Launcher for Native OS Picture-in-Picture Mode
+        async function togglePiP() {
+            try {
+                if (video !== document.pictureInPictureElement) {
+                    await video.play(); // Required by browser security model
+                    await video.requestPictureInPicture();
+                    playSubtitles();
+                } else {
+                    await document.exitPictureInPicture();
+                    pauseSubtitles();
+                }
+            } catch (error) {
+                console.error(error);
+                alert('您的手機瀏覽器不支援、或拒絕了畫中畫(PiP)功能。請嘗試使用最新版 Chrome 瀏覽器打開此網頁！');
+            }
+        }
+
+        // Initialize Android System-level Notification / Lock Screen Controls
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: '中英雙語懸浮字幕同步器',
+                artist: 'SubFloat AI Studio',
+                album: '手機 Netflix 英文學習專用外掛'
+            });
+
+            navigator.mediaSession.setActionHandler('play', () => { playSubtitles(); });
+            navigator.mediaSession.setActionHandler('pause', () => { pauseSubtitles(); });
+            navigator.mediaSession.setActionHandler('seekbackward', (details) => {
+                skipTime(-(details.seekOffset || 5));
+            });
+            navigator.mediaSession.setActionHandler('seekforward', (details) => {
+                skipTime(details.seekOffset || 5);
+            });
+            // Media track skips function as subtitle sentence shifts!
+            navigator.mediaSession.setActionHandler('previoustrack', () => {
+                skipTime(-5);
+            });
+            navigator.mediaSession.setActionHandler('nexttrack', () => {
+                skipTime(5);
+            });
+        }
+    </script>
+</body>
